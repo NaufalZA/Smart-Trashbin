@@ -14,15 +14,7 @@ const topic = 'trashbin/data';
 const dataSchema = new mongoose.Schema({
     kategori: Number,
     jarak: Number,
-    timestamp: { 
-        type: String, 
-        default: () => {
-            const date = new Date();
-            return date.toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })
-                .replace(/\//g, '-')
-                .replace(/\./g, ':');
-        }
-    }
+    timestamp: { type: Date, default: Date.now }
 }, { versionKey: false });
 const dataModel = mongoose.model('data', dataSchema);
 
@@ -46,18 +38,10 @@ mqttClient.on('reconnect', () => {
 mqttClient.on('message', async (topic, message) => {
     try {
         const data = JSON.parse(message.toString());
-        const existingData = await dataModel.findOne({
-            kategori: data.kategori,
-            jarak: data.jarak,
-            timestamp: new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })
-        });
-        if (existingData) {
-            console.log('Data duplikasi terdeteksi:', data);
-            return;
-        }
         const newData = new dataModel({
             kategori: data.kategori,
-            jarak: data.jarak
+            jarak: data.jarak,
+            timestamp: new Date()
         });
         await newData.save();
         console.log('Berhasil menyimpan data:', data);
@@ -68,12 +52,20 @@ mqttClient.on('message', async (topic, message) => {
 
 app.get('/api/getdata', async (req, res) => {
     try {
-        const data = await dataModel.find().sort({ timestamp: -1 }).select('-_id');
-        res.json(data);
+        const data = await dataModel.find().sort({ timestamp: -1 });
+        const formattedData = data.map(item => ({
+            kategori: item.kategori,
+            jarak: item.jarak,
+            timestamp: new Date(item.timestamp).toLocaleString("id-ID", { 
+                timeZone: "Asia/Jakarta" 
+            }).replace(/\//g, '-').replace(/\./g, ':')
+        }));
+        res.json(formattedData);
     } catch (error) {
         res.status(500).json({ error: 'Gagal mengambil data' });
     }
 });
+
 
 app.listen(3000, () => {
     console.log('Server is running on port 3000');
