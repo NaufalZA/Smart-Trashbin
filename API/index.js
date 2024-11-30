@@ -10,31 +10,20 @@ mongoose.connect('mongodb+srv://root:Agista0605.@trashbin.ydrv7.mongodb.net/Tras
 const mqttClient = mqtt.connect('mqtt://broker.hivemq.com:1883');
 const topic = 'trashbin/data';
 
-const counterSchema = new mongoose.Schema({
-    _id: { type: String, required: true },
-    seq: { type: Number, default: 0 }
-});
-const counterModel = mongoose.model('counter', counterSchema);
-
 const dataSchema = new mongoose.Schema({
-    _id: { type: Number, index: true },
     kategori: Number,
     jarak: Number,
     timestamp: { 
         type: String, 
-        default: () => new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })
+        default: () => {
+            const date = new Date();
+            return date.toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })
+                .replace(/\//g, '-')
+                .replace(/\./g, ':');
+        }
     }
 }, { versionKey: false });
 const dataModel = mongoose.model('data', dataSchema);
-
-async function getNextSequenceValue(sequenceName) {
-    const sequenceDocument = await counterModel.findByIdAndUpdate(
-        sequenceName,
-        { $inc: { seq: 1 } },
-        { new: true, upsert: true }
-    );
-    return sequenceDocument.seq;
-}
 
 mqttClient.on('connect', () => {
     console.log('Connected to MQTT broker');
@@ -50,28 +39,26 @@ mqttClient.on('message', async (topic, message) => {
             timestamp: new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })
         });
         if (existingData) {
-            console.log('Duplicate data received, ignoring:', data);
+            console.log('Data duplikasi terdeteksi:', data);
             return;
         }
-        const newId = await getNextSequenceValue('dataId');
         const newData = new dataModel({
-            _id: newId,
             kategori: data.kategori,
             jarak: data.jarak
         });
         await newData.save();
-        console.log('Data saved from MQTT:', data);
+        console.log('Berhasil menyimpan data:', data);
     } catch (error) {
-        console.error('Error saving data:', error);
+        console.error('Gagal menyimpan data:', error);
     }
 });
 
-app.get('/api/', async (req, res) => {
+app.get('/api/getdata', async (req, res) => {
     try {
-        const data = await dataModel.find().sort({ timestamp: -1 });
+        const data = await dataModel.find().sort({ timestamp: -1 }).select('-_id');
         res.json(data);
     } catch (error) {
-        res.status(500).json({ error: 'Error fetching data' });
+        res.status(500).json({ error: 'Gagal mengambil data' });
     }
 });
 
