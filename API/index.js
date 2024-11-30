@@ -62,6 +62,128 @@ app.get('/api/getdata', async (req, res) => {
     }
 });
 
+// Helper function to parse date range
+function getDateRange(start, end) {
+    const startDate = start ? new Date(start) : new Date();
+    const endDate = end ? new Date(end) : new Date();
+    return {
+        startDate: startDate.toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }).replace(/\//g, '-').replace(/\./g, ':'),
+        endDate: endDate.toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }).replace(/\//g, '-').replace(/\./g, ':')
+    };
+}
+
+// Get counts by date range
+app.get('/api/count', async (req, res) => {
+    try {
+        const { start, end } = req.query;
+        const { startDate, endDate } = getDateRange(start, end);
+
+        const result = await dataModel.aggregate([
+            {
+                $match: {
+                    timestamp: {
+                        $gte: startDate,
+                        $lte: endDate
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: "$kategori",
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $project: {
+                    kategori: "$_id",
+                    count: 1,
+                    _id: 0
+                }
+            }
+        ]);
+
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: 'Gagal mengambil statistik' });
+    }
+});
+
+// Get monthly statistics
+app.get('/api/bulan', async (req, res) => {
+    try {
+        const { year, month } = req.query;
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0);
+        const { startDate: start, endDate: end } = getDateRange(startDate, endDate);
+
+        const result = await dataModel.aggregate([
+            {
+                $match: {
+                    timestamp: {
+                        $gte: start,
+                        $lte: end
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: "$kategori",
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $project: {
+                    kategori: "$_id",
+                    count: 1,
+                    _id: 0
+                }
+            }
+        ]);
+
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: 'Gagal mengambil statistik bulanan' });
+    }
+});
+
+// Get yearly statistics
+app.get('/api/tahun', async (req, res) => {
+    try {
+        const { year } = req.query;
+        const startDate = new Date(year, 0, 1);
+        const endDate = new Date(year, 11, 31);
+        const { startDate: start, endDate: end } = getDateRange(startDate, endDate);
+
+        const result = await dataModel.aggregate([
+            {
+                $match: {
+                    timestamp: {
+                        $gte: start,
+                        $lte: end
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: "$kategori",
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $project: {
+                    kategori: "$_id",
+                    count: 1,
+                    _id: 0
+                }
+            }
+        ]);
+
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: 'Gagal mengambil statistik tahunan' });
+    }
+});
+
 app.listen(3000, () => {
     console.log('Server is running on port 3000');
 });
