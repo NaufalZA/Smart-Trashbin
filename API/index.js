@@ -66,6 +66,106 @@ app.get('/api/getdata', async (req, res) => {
     }
 });
 
+app.get('/api/harian', async (req, res) => {
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const result = await dataModel.aggregate([
+            {
+                $match: {
+                    timestamp: { $gte: today }
+                }
+            },
+            {
+                $group: {
+                    _id: "$kategori",
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { _id: 1 }
+            }
+        ]);
+
+        const formattedResult = result.map(item => ({
+            kategori: item._id,
+            jumlah: item.count
+        }));
+
+        res.json(formattedResult);
+    } catch (error) {
+        res.status(500).json({ error: 'Gagal menghitung data harian' });
+    }
+});
+
+app.get('/api/bulanan', async (req, res) => {
+    try {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const result = await dataModel.aggregate([
+            {
+                $match: {
+                    timestamp: { $gte: startOfMonth }
+                }
+            },
+            {
+                $group: {
+                    _id: "$kategori",
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { _id: 1 }
+            }
+        ]);
+
+        const formattedResult = result.map(item => ({
+            kategori: item._id,
+            jumlah: item.count
+        }));
+
+        res.json(formattedResult);
+    } catch (error) {
+        res.status(500).json({ error: 'Gagal menghitung data bulanan' });
+    }
+});
+
+app.get('/api/tahunan', async (req, res) => {
+    try {
+        const startOfYear = new Date();
+        startOfYear.setMonth(0, 1);
+        startOfYear.setHours(0, 0, 0, 0);
+
+        const result = await dataModel.aggregate([
+            {
+                $match: {
+                    timestamp: { $gte: startOfYear }
+                }
+            },
+            {
+                $group: {
+                    _id: "$kategori",
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { _id: 1 }
+            }
+        ]);
+
+        const formattedResult = result.map(item => ({
+            kategori: item._id,
+            jumlah: item.count
+        }));
+
+        res.json(formattedResult);
+    } catch (error) {
+        res.status(500).json({ error: 'Gagal menghitung data tahunan' });
+    }
+});
 
 app.listen(3000, () => {
     console.log('Server is running on port 3000');
