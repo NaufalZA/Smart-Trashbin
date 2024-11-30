@@ -10,12 +10,31 @@ mongoose.connect('mongodb+srv://root:Agista0605.@trashbin.ydrv7.mongodb.net/Tras
 const mqttClient = mqtt.connect('mqtt://broker.hivemq.com:1883');
 const topic = 'trashbin/data';
 
+const counterSchema = new mongoose.Schema({
+    _id: { type: String, required: true },
+    seq: { type: Number, default: 0 }
+});
+const counterModel = mongoose.model('counter', counterSchema);
+
 const dataSchema = new mongoose.Schema({
+    _id: { type: Number, index: true },
     kategori: Number,
     jarak: Number,
-    timestamp: { type: Date, default: Date.now }
-});
+    timestamp: { 
+        type: String, 
+        default: () => new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })
+    }
+}, { versionKey: false });
 const dataModel = mongoose.model('data', dataSchema);
+
+async function getNextSequenceValue(sequenceName) {
+    const sequenceDocument = await counterModel.findByIdAndUpdate(
+        sequenceName,
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+    );
+    return sequenceDocument.seq;
+}
 
 mqttClient.on('connect', () => {
     console.log('Connected to MQTT broker');
@@ -25,7 +44,9 @@ mqttClient.on('connect', () => {
 mqttClient.on('message', async (topic, message) => {
     try {
         const data = JSON.parse(message.toString());
+        const newId = await getNextSequenceValue('dataId');
         const newData = new dataModel({
+            _id: newId,
             kategori: data.kategori,
             jarak: data.jarak
         });
