@@ -44,6 +44,15 @@ mqttClient.on('connect', () => {
 mqttClient.on('message', async (topic, message) => {
     try {
         const data = JSON.parse(message.toString());
+        const existingData = await dataModel.findOne({
+            kategori: data.kategori,
+            jarak: data.jarak,
+            timestamp: new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })
+        });
+        if (existingData) {
+            console.log('Duplicate data received, ignoring:', data);
+            return;
+        }
         const newId = await getNextSequenceValue('dataId');
         const newData = new dataModel({
             _id: newId,
