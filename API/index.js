@@ -7,7 +7,13 @@ app.use(express.json());
 
 mongoose.connect('mongodb+srv://root:Agista0605.@trashbin.ydrv7.mongodb.net/TrashBin')
 
-const mqttClient = mqtt.connect('mqtt://broker.hivemq.com:1883');
+const mqttOptions = {
+    keepalive: 10,
+    reconnectPeriod: 1000,
+    connectTimeout: 20000
+};
+
+const mqttClient = mqtt.connect('mqtt://broker.hivemq.com:1883', mqttOptions);
 const topic = 'trashbin/data';
 
 const dataSchema = new mongoose.Schema({
@@ -28,6 +34,18 @@ const dataModel = mongoose.model('data', dataSchema);
 mqttClient.on('connect', () => {
     console.log('Connected to MQTT broker');
     mqttClient.subscribe(topic);
+});
+
+mqttClient.on('error', (error) => {
+    console.log('MQTT Error:', error);
+});
+
+mqttClient.on('close', () => {
+    console.log('MQTT connection closed. Attempting to reconnect...');
+});
+
+mqttClient.on('reconnect', () => {
+    console.log('Attempting to reconnect to MQTT broker...');
 });
 
 mqttClient.on('message', async (topic, message) => {
