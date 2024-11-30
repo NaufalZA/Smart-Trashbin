@@ -167,6 +167,72 @@ app.get('/api/tahunan', async (req, res) => {
     }
 });
 
+app.get('/api/range', async (req, res) => {
+    try {
+        const { start, end } = req.query;
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        endDate.setHours(23, 59, 59, 999);
+
+        const result = await dataModel.aggregate([
+            {
+                $match: {
+                    timestamp: { 
+                        $gte: startDate,
+                        $lte: endDate
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: "$kategori",
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { _id: 1 }
+            }
+        ]);
+
+        const formattedResult = result.map(item => ({
+            kategori: item._id,
+            jumlah: item.count
+        }));
+
+        res.json(formattedResult);
+    } catch (error) {
+        res.status(500).json({ error: 'Gagal mengambil data range' });
+    }
+});
+
+app.get('/api/range/detail', async (req, res) => {
+    try {
+        const { start, end } = req.query;
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        endDate.setHours(23, 59, 59, 999);
+
+        const data = await dataModel.find({
+            timestamp: {
+                $gte: startDate,
+                $lte: endDate
+            }
+        }).sort({ timestamp: -1 });
+
+        const formattedData = data.map(item => ({
+            kategori: item.kategori,
+            jarak: item.jarak,
+            timestamp: new Date(item.timestamp).toLocaleString("id-ID", { 
+                timeZone: "Asia/Jakarta" 
+            }).replace(/\//g, '-').replace(/\./g, ':')
+        }));
+
+        res.json(formattedData);
+    } catch (error) {
+        res.status(500).json({ error: 'Gagal mengambil data detail range' });
+    }
+});
+
 app.listen(3000, () => {
     console.log('Server is running on port 3000');
 });
