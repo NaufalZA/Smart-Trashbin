@@ -19,6 +19,47 @@
     <div class="container mt-4">
         <h2 class="text-center mb-4">Smart Trashbin Dashboard</h2>
         
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Tingkat Kepenuhan</h5>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h6>Organik</h6>
+                                <div class="progress mb-2">
+                                    <div id="organikProgress" class="progress-bar bg-success" role="progressbar"></div>
+                                </div>
+                                <span id="organikValue">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h6>Anorganik</h6>
+                                <div class="progress mb-2">
+                                    <div id="anorganikProgress" class="progress-bar bg-primary" role="progressbar"></div>
+                                </div>
+                                <span id="anorganikValue">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h6>B3</h6>
+                                <div class="progress mb-2">
+                                    <div id="b3Progress" class="progress-bar bg-danger" role="progressbar"></div>
+                                </div>
+                                <span id="b3Value">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row mb-4">
             <div class="col-md-6">
                 <div class="card">

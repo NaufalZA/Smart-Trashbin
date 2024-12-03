@@ -14,7 +14,16 @@ const mqttClient = mqtt.connect('mqtt://test.mosquitto.org:1883');
 const topic = 'trashbin/data';
 
 const dataSchema = new mongoose.Schema({
-    kategori: Number,
+    kategori: {
+        type: Number,
+        required: true,
+        validate: {
+            validator: function(v) {
+                return v === 1 || v === 2 || v === 3;
+            },
+            message: 'Kategori harus 1, 2, atau 3'
+        }
+    },
     jarak: Number,
     timestamp: { type: Date, default: Date.now }
 }, { versionKey: false });
@@ -40,6 +49,13 @@ mqttClient.on('reconnect', () => {
 mqttClient.on('message', async (topic, message) => {
     try {
         const data = JSON.parse(message.toString());
+        
+        // Validasi kategori
+        if (![1, 2, 3].includes(data.kategori)) {
+            console.error('Invalid kategori:', data.kategori);
+            return;
+        }
+
         const newData = new dataModel({
             kategori: data.kategori,
             jarak: data.jarak,
