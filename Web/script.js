@@ -1,5 +1,5 @@
-// const API_URL = 'https://smart-trashbin.onrender.com/api';
-const API_URL = "http://localhost:3000/api";
+const API_URL = "https://smart-trashbin-api.onrender.com/api";
+// const API_URL = "http://localhost:3000/api";
 const categoryLabels = ["Organik", "Anorganik", "B3"];
 const chartColors = ["#4CAF50", "#2196F3", "#F44336"];
 
