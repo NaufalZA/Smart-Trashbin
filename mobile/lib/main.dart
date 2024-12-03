@@ -32,6 +32,19 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   final ApiService _apiService = ApiService();
 
+  String getCategoryName(int kategori) {
+    switch (kategori) {
+      case 1:
+        return 'Organik';
+      case 2:
+        return 'Anorganik';
+      case 3:
+        return 'B3';
+      default:
+        return 'Unknown';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -79,8 +92,8 @@ class _DashboardPageState extends State<DashboardPage> {
           itemBuilder: (context, index) {
             final data = snapshot.data![index];
             return ListTile(
-              title: Text('Category ${data.kategori}'),
-              subtitle: Text('Distance: ${data.jarak}cm\n${data.timestamp}'),
+              title: Text(getCategoryName(data.kategori)),
+              subtitle: Text('Jarak: ${data.jarak}cm\n${data.timestamp}'),
             );
           },
         );
@@ -107,7 +120,7 @@ class _DashboardPageState extends State<DashboardPage> {
           itemBuilder: (context, index) {
             final data = snapshot.data![index];
             return ListTile(
-              title: Text('Category ${data.kategori}'),
+              title: Text(getCategoryName(data.kategori)),
               trailing: Text('Count: ${data.jumlah}'),
             );
           },
