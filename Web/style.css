@@ -339,10 +339,15 @@ main .history-charts canvas {
 
 .right .top {
     display: flex;
-    justify-content: flex-end;  /* Changed from end to flex-end for consistency */
+    justify-content: end;
+    gap: 2rem;
+    background: var(--color-white);
     padding: 1rem;
     border-radius: var(--border-radius-1);
-    background: transparent;  /* Remove background since we only have theme toggler */
+}
+
+.right .top button {
+    display: none;
 }
 
 .right .top .theme-toggler {
@@ -356,6 +361,26 @@ main .history-charts canvas {
     border-radius: var(--border-radius-1);
     overflow: hidden;
     transition: all 0.3s ease;
+}
+
+.right .top .theme-toggler:hover {
+    transform: scale(1.1);
+}
+
+.right .top .theme-toggler span {
+    font-size: 1.2rem;
+    width: 50%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.right .top .theme-toggler span.active {
+    background: var(--color-primary);
+    color: white;
+    border-radius: var(--border-radius-1);
 }
 
 /* Date Filter and Recent Data */
