@@ -342,8 +342,10 @@ main .history-charts canvas {
     justify-content: end;
     gap: 2rem;
     background: var(--color-white);
-    padding: 1rem;
+    padding: 0.5rem;  /* Reduced from 1rem to 0.5rem */
     border-radius: var(--border-radius-1);
+    width: fit-content;  /* Add this to make width fit content */
+    margin-left: auto;  /* Add this to keep it aligned to the right */
 }
 
 .right .top button {
@@ -384,7 +386,15 @@ main .history-charts canvas {
 }
 
 /* Date Filter and Recent Data */
-.right .date-filter,
+.right .date-filter {
+    margin-top: 1rem;  /* Changed from 2rem to 1rem to match insights margin-top */
+    background: var(--color-white);
+    padding: var(--card-padding);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--box-shadow);
+}
+
+/* Keep recent-data margin as is */
 .right .recent-data {
     margin-top: 2rem;
     background: var(--color-white);
