@@ -12,10 +12,15 @@ function createPlot(divId) {
         y: [0, 0, 0],
         type: 'bar',
         marker: {
-            color: ['#41f1b6', '#7380ec', '#ff7782'],
-            borderRadius: 6 // Menambahkan border radius pada bar
+            color: chartColors,
+            borderRadius: 8,
+            opacity: 0.8
         },
-        hovertemplate: '%{y} sampah<extra></extra>' // Custom hover text
+        hovertemplate: '<b>%{x}</b><br>Jumlah: %{y}<extra></extra>',
+        transitions: {
+            duration: 500,
+            easing: 'cubic-in-out'
+        }
     };
 
     const layout = {
@@ -52,7 +57,26 @@ function createPlot(divId) {
                 standoff: 10
             }
         },
-        bargap: 0.3, // Jarak antar bar
+        bargap: 0.4,
+        shapes: [{
+            type: 'rect',
+            xref: 'paper',
+            yref: 'paper',
+            x0: 0,
+            y0: 0,
+            x1: 1,
+            y1: 1,
+            fillcolor: 'transparent',
+            line: {
+                color: 'rgba(255,255,255,0.1)',
+                width: 1
+            }
+        }],
+        hoverlabel: {
+            bgcolor: 'rgba(255,255,255,0.9)',
+            font: { color: '#333' },
+            bordercolor: 'transparent'
+        },
         showlegend: false,
         modebar: { 
             bgcolor: 'transparent',
@@ -139,18 +163,49 @@ function updateFullnessIndicators(data) {
   });
 }
 
-// Modify existing updateDashboard function
+// Improve loading management
+let isLoading = false;
+
+function showLoading() {
+    if (isLoading) return; // Prevent multiple overlays
+    isLoading = true;
+    
+    const existing = document.querySelector('.loading-overlay');
+    if (existing) existing.remove();
+    
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'loading-overlay';
+    loadingDiv.innerHTML = '<div class="spinner"></div>';
+    document.body.appendChild(loadingDiv);
+}
+
+function hideLoading() {
+    isLoading = false;
+    const loadingDiv = document.querySelector('.loading-overlay');
+    if (loadingDiv) {
+        loadingDiv.classList.add('fade-out');
+        setTimeout(() => loadingDiv.remove(), 300);
+    }
+}
+
+// Modify updateDashboard with better error handling
 async function updateDashboard() {
-  const [dailyData, monthlyData] = await Promise.all([
-    fetchData("harian"),
-    fetchData("bulanan"),
-  ]);
+    try {
+        showLoading();
+        const [dailyData, monthlyData, recentData] = await Promise.all([
+            fetchData("harian"),
+            fetchData("bulanan"),
+            fetchData("getdata")
+        ]);
 
-  updatePlot(dailyPlot, dailyData);
-  updatePlot(monthlyPlot, monthlyData);
-
-  const recentData = await fetchData("getdata");
-  updateRecentDataTable(recentData.slice(0, 10));
+        updatePlot(dailyPlot, dailyData);
+        updatePlot(monthlyPlot, monthlyData);
+        updateRecentDataTable(recentData.slice(0, 10));
+    } catch (error) {
+        console.error("Failed to update dashboard:", error);
+    } finally {
+        hideLoading();
+    }
 }
 
 function updateRecentDataTable(data) {
@@ -176,7 +231,7 @@ async function updateRangeData(start, end) {
   updatePlot(rangePlot, data);
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   dailyPlot = createPlot('dailyChart');
   monthlyPlot = createPlot('monthlyChart');
   rangePlot = createPlot('rangeChart');
@@ -194,8 +249,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   );
 
-  updateDashboard();
-  setInterval(updateDashboard, 30000);
+  // Initial load
+  await updateDashboard();
+  
+  // Set interval for updates
+  setInterval(async () => {
+      if (!isLoading) { // Only update if not already loading
+          await updateDashboard();
+      }
+  }, 30000);
 });
 
 // Modify theme toggler code to remove menu button references

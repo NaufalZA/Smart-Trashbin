@@ -2,11 +2,11 @@
 
 :root {
     --color-background: #090d3e;  
-    --color-white: #0b0f4a;
+    --color-white: rgba(11, 15, 74, 0.8);
     --color-dark: #edeffd;
     --color-dark-variant: #fff;
     --color-light: rgba(0, 0, 0, 0.4);
-    --chart-background: #0d1256;
+    --chart-background: rgba(13, 18, 86, 0.9);
     --chart-font-color: #fff;
     --chart-axis-color: #fff;
     
@@ -60,6 +60,7 @@ body {
     user-select: none;
     overflow-x: hidden;
     color: var(--color-dark);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .container {
@@ -206,11 +207,11 @@ main .insights {
 }
 
 main .insights > div {
-    background: var(--color-white);
+    background: rgba(255, 255, 255, 0.05);
     padding: var(--card-padding);
     border-radius: var(--card-border-radius);
     margin-top: 1rem;
-    box-shadow: var(--box-shadow);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
     transition: all 300ms ease;
     backdrop-filter: blur(6px);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -219,8 +220,8 @@ main .insights > div {
 
 main .insights > div:hover {
     box-shadow: none;
-    transform: translateY(-10px);
-    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.2);
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
 }
 
 main .insights > div .icon {
@@ -271,20 +272,25 @@ main .insights h3 {
 }
 
 .progress-bar {
-    transition: all 0.8s ease;
+    transition: all 1s ease;
     position: relative;
     overflow: hidden;
+    border-radius: 6px;
 }
 
 .progress-bar::after {
     content: '';
     position: absolute;
     top: 0;
-    left: 0;
+    left: -100%;
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    animation: loading 1.5s infinite;
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    100% { transform: translateX(200%); }
 }
 
 @keyframes loading {
@@ -300,7 +306,7 @@ main .histories {
 }
 
 main .history-charts {
-    background: var(--color-white);
+    background: rgba(255, 255, 255, 0.05);
     padding: var(--card-padding);
     border-radius: var(--card-border-radius);
     margin-top: 0.8rem;
@@ -315,21 +321,52 @@ main .history-charts {
 }
 
 main .history-charts > div {
-    background: var(--chart-background);
+    background: rgba(255, 255, 255, 0.05);
     padding: 0.8rem; /* Reduce padding */
     border-radius: 1rem;
-    transition: all 0.3s ease;
+    transition: all 0.4s ease;
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.18);
     width: 100%;
     min-width: 0;
     max-width: 100%; /* Add max-width */
     overflow: hidden; /* Add overflow hidden */
+    cursor: pointer;
+}
+
+main .history-charts > div:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
 }
 
 main .history-charts canvas {
     width: 100% !important;
     height: 250px !important; /* Menyesuaikan tinggi chart */
+}
+
+/* Move recent-data styles to main section */
+main .recent-data {
+    margin-top: 2rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: var(--card-padding);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--box-shadow);
+    backdrop-filter: blur(6px);
+    width: 100%;
+}
+
+main .recent-data table {
+    background: var(--color-white);
+    width: 100%;
+    padding: var(--card-padding);
+    text-align: center;
+    box-shadow: var(--box-shadow);
+    border-radius: var(--card-border-radius);
+    transition: all 300ms ease;
+    border-spacing: 0 0.5rem;
+    border-collapse: separate;
 }
 
 /* Right Section */
@@ -388,7 +425,7 @@ main .history-charts canvas {
 /* Date Filter and Recent Data */
 .right .date-filter {
     margin-top: 1rem;  /* Changed from 2rem to 1rem to match insights margin-top */
-    background: var(--color-white);
+    background: rgba(255, 255, 255, 0.05);
     padding: var(--card-padding);
     border-radius: var(--card-border-radius);
     box-shadow: var(--box-shadow);
@@ -397,7 +434,7 @@ main .history-charts canvas {
 /* Keep recent-data margin as is */
 .right .recent-data {
     margin-top: 2rem;
-    background: var(--color-white);
+    background: rgba(255, 255, 255, 0.05);
     padding: var(--card-padding);
     border-radius: var(--card-border-radius);
     box-shadow: var(--box-shadow);
@@ -420,17 +457,53 @@ main .history-charts canvas {
 }
 
 .right .recent-data table tr {
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+    margin-bottom: 0.5rem;
 }
 
 .right .recent-data table tr:hover {
-    transform: scale(1.02);
-    background: var(--color-light);
+    transform: scale(1.01);
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(5px);
 }
 
 .right .recent-data table td {
     padding: 1rem;
     border-radius: 0.5rem;
+}
+
+/* Improve loading overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    backdrop-filter: blur(5px);
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.loading-overlay.fade-out {
+    opacity: 0;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--color-primary);
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 /* Media Queries */
@@ -573,6 +646,11 @@ main .history-charts canvas {
     main .history-charts {
         grid-template-columns: 1fr; /* Ubah menjadi satu kolom pada mobile */
         padding: 0.5rem;
+    }
+    
+    main .recent-data {
+        margin: 2rem 0;
+        width: 100%;
     }
 }
 
