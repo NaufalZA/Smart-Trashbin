@@ -244,23 +244,50 @@ async function updateRangeData(start, end) {
   updatePlot(rangePlot, data);
 }
 
+// ...existing code...
+
 document.addEventListener("DOMContentLoaded", async () => {
     dailyPlot = createPlot('dailyChart');
     monthlyPlot = createPlot('monthlyChart');
     rangePlot = createPlot('rangeChart');
 
+    const currentDate = moment();
+    const minDate = moment('2023-01-01'); // Set minimum date to January 2023
+
     $("#dateRange").daterangepicker({
-        autoUpdateInput: false, // Tambahkan ini agar tidak muncul otomatis
-        startDate: moment(), // Ubah ini
-        endDate: moment(),   // Ubah ini
+        autoUpdateInput: false,
+        startDate: currentDate,
+        endDate: currentDate,
         opens: 'left',
         ranges: {
-            'Hari Ini': [moment(), moment()],
-            'Kemarin': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-            '7 Hari Terakhir': [moment().subtract(6, 'days'), moment()],
-            '30 Hari Terakhir': [moment().subtract(29, 'days'), moment()],
-            'Bulan Ini': [moment().startOf('month'), moment().endOf('month')],
-            'Bulan Lalu': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            'Hari Ini': [currentDate, currentDate],
+            'Kemarin': [currentDate.clone().subtract(1, 'days'), currentDate.clone().subtract(1, 'days')],
+            '7 Hari Terakhir': [currentDate.clone().subtract(6, 'days'), currentDate],
+            '30 Hari Terakhir': [currentDate.clone().subtract(29, 'days'), currentDate],
+            'Bulan Ini': [currentDate.clone().startOf('month'), currentDate],
+            'Bulan Lalu': [currentDate.clone().subtract(1, 'month').startOf('month'), currentDate.clone().subtract(1, 'month').endOf('month')],
+            'Pilih Tanggal': 'custom'
+        },
+        showDropdowns: true,
+        minYear: parseInt(minDate.format('YYYY'), 10),
+        maxYear: parseInt(currentDate.format('YYYY'), 10),
+        minDate: minDate,
+        maxDate: currentDate,
+        showCustomRangeLabel: false,
+        alwaysShowCalendars: true,
+        autoApply: true,
+        linkedCalendars: false,
+        isInvalidDate: function(date) {
+            // Get the left calendar's selected date
+            const leftDate = this.leftCalendar.month;
+            const rightDate = this.rightCalendar.month;
+            
+            // If date is in right calendar and before left calendar's month
+            if (date.isSame(rightDate, 'month') && date.isBefore(leftDate, 'month')) {
+                return true;
+            }
+            
+            return date.isAfter(currentDate) || date.isBefore(minDate);
         },
         locale: {
             format: "DD MMM YYYY",
@@ -269,38 +296,33 @@ document.addEventListener("DOMContentLoaded", async () => {
             cancelLabel: "Batal",
             fromLabel: "Dari",
             toLabel: "Sampai",
-            customRangeLabel: "Pilih Tanggal",
             weekLabel: "M",
             daysOfWeek: ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"],
             monthNames: ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"],
             firstDay: 1
         },
-        autoApply: false,
-        showDropdowns: true,
-        minYear: 2020,
-        maxYear: parseInt(moment().format('YYYY'),10) + 1,
-        linkedCalendars: false, // Tambahkan ini
-        maxSpan: false, // Tambahkan ini
-        alwaysShowCalendars: false, // Tambahkan ini
-        drops: 'down', // Menentukan arah dropdown
-        parentEl: $('.date-filter'), // Menentukan parent element
-        cancelClass: 'btn-light', // Optional: styling tombol cancel
-        applyClass: 'btn-primary', // Optional: styling tombol apply
-        
-        // Memastikan picker tidak muncul otomatis
-        isInvalidDate: function() {
-            return false; // Mencegah picker muncul otomatis
-        },
-        isCustomDate: function() {
-            return false; // Mencegah picker muncul otomatis
-        },
-        singleDatePicker: false,
-        timePicker: false,
-        timePicker24Hour: false,
-        timePickerIncrement: 1,
-        timePickerSeconds: false,
-        buttonClasses: 'btn',
     });
+
+    // Remove these lines that were hiding the calendar
+    // $('.calendar-table').hide();
+    // $('.daterangepicker').hide();
+
+    // Handle custom range selection
+    $('.ranges li:last-child').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $('.calendar-table').show();
+        $('.ranges').show(); // Changed to show
+    });
+
+    // Handle calendar date selection
+    $('.daterangepicker').on('hide.daterangepicker', function(ev, picker) {
+        $('.calendar-table').hide();
+        $('.ranges').show();
+    });
+
+    // Clear the input initially
+    $('#dateRange').val('');
 
     // Segera sembunyikan picker setelah inisialisasi
     $('.daterangepicker').hide();
@@ -320,6 +342,64 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Tambahkan event listener untuk mengosongkan input saat dibatalkan
     $('#dateRange').on('cancel.daterangepicker', function(ev, picker) {
         $(this).val('');
+    });
+
+    // Add event listener for calendar changes
+    $('.daterangepicker').on('showCalendar.daterangepicker', function(ev, picker) {
+        // Clear selection if left month is after or equal to right month
+        if (picker.leftCalendar.month.isSameOrAfter(picker.rightCalendar.month, 'month')) {
+            picker.setEndDate(picker.startDate);
+            $('#dateRange').val('');
+        }
+        
+        // Update right calendar's valid dates
+        picker.updateCalendars();
+    });
+
+    // Add this after daterangepicker initialization
+    $('.calendar.left').on('monthChanged.daterangepicker', function(ev, picker) {
+        // Automatically move right calendar to next month
+        const nextMonth = picker.leftCalendar.month.clone().add(1, 'month');
+        picker.rightCalendar.month = nextMonth;
+        picker.updateCalendars();
+    });
+
+    // Update the month change handler
+    $('.calendar.left').on('monthChanged.daterangepicker', function(ev, picker) {
+        const leftMonth = picker.leftCalendar.month;
+        const nextMonth = leftMonth.clone().add(1, 'month');
+        
+        // Update right calendar immediately
+        picker.rightCalendar.month = nextMonth;
+        picker.updateCalendars();
+        
+        // Automatically update the selection
+        if (picker.startDate && picker.endDate) {
+            const newEndDate = picker.endDate.clone().month(nextMonth.month()).year(nextMonth.year());
+            picker.setEndDate(newEndDate);
+            
+            // Update input and trigger data fetch
+            $('#dateRange').val(
+                picker.startDate.format('DD MMM YYYY') + ' - ' + 
+                newEndDate.format('DD MMM YYYY')
+            );
+            updateRangeData(
+                picker.startDate.format("YYYY-MM-DD"), 
+                newEndDate.format("YYYY-MM-DD")
+            );
+        }
+    });
+
+    // Add handler for right calendar month change
+    $('.calendar.right').on('monthChanged.daterangepicker', function(ev, picker) {
+        const rightMonth = picker.rightCalendar.month;
+        
+        // If right month is before or same as left month, adjust it
+        if (rightMonth.isSameOrBefore(picker.leftCalendar.month)) {
+            const newRightMonth = picker.leftCalendar.month.clone().add(1, 'month');
+            picker.rightCalendar.month = newRightMonth;
+            picker.updateCalendars();
+        }
     });
 
     // Initial load with loading screen

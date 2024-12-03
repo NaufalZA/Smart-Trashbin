@@ -489,7 +489,6 @@ main .recent-data table {
 
 .right .recent-data table td {
     padding: 1rem;
-    border-radius: 0.5rem;
 }
 
 /* Improve loading overlay */
@@ -737,6 +736,16 @@ main .recent-data table {
     cursor: pointer;
     position: relative;
     z-index: 100;
+    width: auto;  /* Added to improve dropdown width */
+}
+
+.daterangepicker select.monthselect {
+    width: 100px;  /* Set specific width for month dropdown */
+    margin-right: 5px;
+}
+
+.daterangepicker select.yearselect {
+    width: 80px;  /* Set specific width for year dropdown */
 }
 
 /* Perbaiki interaksi kalender */
@@ -940,4 +949,31 @@ main .recent-data table {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--color-primary-variant);
+}
+
+/* DateRangePicker Custom Styling */
+.daterangepicker.show-calendar .drp-buttons {
+    display: none !important;  /* Only hide the buttons */
+}
+
+.daterangepicker .ranges ul {
+    width: 200px;
+}
+
+.daterangepicker .ranges li {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+/* Style for custom date button */
+.daterangepicker .ranges li:last-child {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 4px;
+    padding-top: 8px;
+    color: var(--color-primary);
+}
+
+.daterangepicker .ranges li:hover {
+    background: var(--color-light);
 }
