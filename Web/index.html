@@ -4,104 +4,129 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Trashbin Dashboard</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Sharp" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.plot.ly/plotly-2.16.1.min.js"></script>
     <style>
-        .chart-container {
-            position: relative;
-            margin: auto;
-            height: 300px;
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--color-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
-<body>
-    <div class="container mt-4">
-        <h2 class="text-center mb-4">Smart Trashbin Dashboard</h2>
-        
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Tingkat Kepenuhan</h5>
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <div class="card">
-                            <div class="card-body text-center">
-                                <h6>Organik</h6>
-                                <div class="progress mb-2">
-                                    <div id="organikProgress" class="progress-bar bg-success" role="progressbar"></div>
-                                </div>
-                                <span id="organikValue">0%</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="card">
-                            <div class="card-body text-center">
-                                <h6>Anorganik</h6>
-                                <div class="progress mb-2">
-                                    <div id="anorganikProgress" class="progress-bar bg-primary" role="progressbar"></div>
-                                </div>
-                                <span id="anorganikValue">0%</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="card">
-                            <div class="card-body text-center">
-                                <h6>B3</h6>
-                                <div class="progress mb-2">
-                                    <div id="b3Progress" class="progress-bar bg-danger" role="progressbar"></div>
-                                </div>
-                                <span id="b3Value">0%</span>
-                            </div>
-                        </div>
-                    </div>
+<body class="dark-theme-variables">
+    <div class="container">
+        <aside>
+            <div class="top">
+                <div class="logo">
+                    <img src="images/logo.png" alt="">
+                    <h2>Smart Trashbin</h2>
+                </div>
+                <div class="close" id="close-btn">
+                    <span class="material-symbols-sharp">close</span>
                 </div>
             </div>
-        </div>
+            <div class="sidebar">
+                <a href="#" class="active">
+                    <span class="material-symbols-sharp">dashboard</span>
+                    <h3>Dashboard</h3>
+                </a>
+            </div>
+        </aside>
 
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Data Harian</h5>
-                        <div class="chart-container">
-                            <canvas id="dailyChart"></canvas>
+        <main>
+            <h1>Dashboard</h1>
+            
+            <div class="insights">
+                <div class="temperature">
+                    <div class="middle">
+                        <div class="left">
+                            <h3>Organik</h3>
+                            <div class="progress mb-2">
+                                <div id="organikProgress" class="progress-bar bg-success" role="progressbar"></div>
+                            </div>
+                            <span id="organikValue">0%</span>
+                        </div>
+                        <div class="icon">
+                            <span class="material-symbols-sharp">delete</span>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Data Bulanan</h5>
-                        <div class="chart-container">
-                            <canvas id="monthlyChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Filter Data berdasarkan Tanggal</h5>
-                <div class="row">
-                    <div class="col-md-4">
-                        <input type="text" id="dateRange" class="form-control">
+                <div class="humidity">
+                    <div class="middle">
+                        <div class="left">
+                            <h3>Anorganik</h3>
+                            <div class="progress mb-2">
+                                <div id="anorganikProgress" class="progress-bar bg-primary" role="progressbar"></div>
+                            </div>
+                            <span id="anorganikValue">0%</span>
+                        </div>
+                        <div class="icon">
+                            <span class="material-symbols-sharp">delete</span>
+                        </div>
                     </div>
-                    <div class="col-md-8">
-                        <div class="chart-container">
-                            <canvas id="rangeChart"></canvas>
+                </div>
+
+                <div class="pressure">
+                    <div class="middle">
+                        <div class="left">
+                            <h3>B3</h3>
+                            <div class="progress mb-2">
+                                <div id="b3Progress" class="progress-bar bg-danger" role="progressbar"></div>
+                            </div>
+                            <span id="b3Value">0%</span>
+                        </div>
+                        <div class="icon">
+                            <span class="material-symbols-sharp">delete</span>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Data Terkini</h5>
+            <div class="histories">
+                <h2>Historical Data</h2>
+                <div class="history-charts">
+                    <div id="dailyChart" class="history-divs"></div>
+                    <div id="monthlyChart" class="history-divs"></div>
+                </div>
+            </div>
+
+            <div class="recent-data">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2>Recent Data</h2>
+                    <select id="sortKategori" class="form-select" style="width: auto;">
+                        <option value="all">Semua Kategori</option>
+                        <option value="1">Organik</option>
+                        <option value="2">Anorganik</option>
+                        <option value="3">B3</option>
+                    </select>
+                </div>
                 <div class="table-responsive">
                     <table class="table" id="recentData">
                         <thead>
@@ -115,10 +140,24 @@
                     </table>
                 </div>
             </div>
+        </main>
+
+        <div class="right">
+            <div class="top">
+                <div class="theme-toggler">
+                    <span class="material-symbols-sharp">light_mode</span>
+                    <span class="material-symbols-sharp active">dark_mode</span>
+                </div>
+            </div>
+
+            <div class="date-filter">
+                <h2>Date Filter</h2>
+                <input type="text" id="dateRange" class="form-control">
+                <div id="rangeChart"></div>
+            </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
