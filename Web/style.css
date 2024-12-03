@@ -369,6 +369,26 @@ main .recent-data table {
     border-collapse: separate;
 }
 
+/* Add styles for select element */
+#sortKategori {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-dark);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-1);
+    padding: 0.5rem;
+    backdrop-filter: blur(4px);
+    transition: all 0.3s ease;
+}
+
+#sortKategori:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+#sortKategori option {
+    background: var(--color-background);
+    color: var(--color-dark);
+}
+
 /* Right Section */
 .right {
     margin-top: 1.4rem;

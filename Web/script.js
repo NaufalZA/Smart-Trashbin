@@ -5,6 +5,7 @@ const chartColors = ["#4CAF50", "#2196F3", "#F44336"];
 
 // Hapus variabel chart sebelumnya
 let dailyPlot, monthlyPlot, rangePlot;
+let currentData = []; // Add this at the top with other global variables
 
 function createPlot(divId) {
     const trace = {
@@ -209,21 +210,29 @@ async function updateDashboard() {
 }
 
 function updateRecentDataTable(data) {
-  const tbody = document.querySelector("#recentData tbody");
-  tbody.innerHTML = "";
+    currentData = data; // Store the data globally
+    const sortSelect = document.getElementById('sortKategori');
+    const selectedKategori = sortSelect.value;
+    
+    const filteredData = selectedKategori === 'all' 
+        ? data 
+        : data.filter(item => item.kategori === parseInt(selectedKategori));
 
-  data.forEach((item) => {
-    const fullness = calculateFullness(item.jarak);
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
+    const tbody = document.querySelector("#recentData tbody");
+    tbody.innerHTML = "";
+
+    filteredData.forEach((item) => {
+        const fullness = calculateFullness(item.jarak);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
             <td>${categoryLabels[item.kategori - 1]}</td>
             <td>${item.jarak} cm (${Math.round(fullness)}% penuh)</td>
             <td>${item.timestamp}</td>
         `;
-    tbody.appendChild(tr);
-  });
+        tbody.appendChild(tr);
+    });
 
-  updateFullnessIndicators(data);
+    updateFullnessIndicators(data);
 }
 
 async function updateRangeData(start, end) {
@@ -258,6 +267,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           await updateDashboard();
       }
   }, 30000);
+
+  // Add event listener for sort select
+  document.getElementById('sortKategori').addEventListener('change', (e) => {
+      updateRecentDataTable(currentData);
+  });
 });
 
 // Modify theme toggler code to remove menu button references

@@ -118,7 +118,15 @@
             </div>
 
             <div class="recent-data">
-                <h2>Recent Data</h2>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2>Recent Data</h2>
+                    <select id="sortKategori" class="form-select" style="width: auto;">
+                        <option value="all">Semua Kategori</option>
+                        <option value="1">Organik</option>
+                        <option value="2">Anorganik</option>
+                        <option value="3">B3</option>
+                    </select>
+                </div>
                 <div class="table-responsive">
                     <table class="table" id="recentData">
                         <thead>
