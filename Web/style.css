@@ -526,6 +526,256 @@ main .recent-data table {
     to { transform: rotate(360deg); }
 }
 
+/* Date Filter Improvements */
+.right .date-filter {
+    margin-top: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: var(--card-padding);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--box-shadow);
+    backdrop-filter: blur(6px);
+}
+
+.right .date-filter input {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-dark);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.8rem;
+    border-radius: var(--border-radius-1);
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.right .date-filter input:hover,
+.right .date-filter input:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--color-primary);
+}
+
+/* DateRangePicker Custom Styling */
+.daterangepicker {
+    background: var(--color-white);
+    border: none;
+    border-radius: var(--border-radius-2);
+    box-shadow: var(--box-shadow);
+    font-family: 'Poppins', sans-serif;
+    backdrop-filter: blur(10px);
+    color: var(--color-dark); /* Add this line */
+}
+
+.daterangepicker .calendar-table {
+    background: transparent;
+    border: none;
+    color: var(--color-dark); /* Add this line */
+}
+
+.daterangepicker th.month {
+    color: var(--color-dark);
+}
+
+.daterangepicker td.off, 
+.daterangepicker td.off.in-range, 
+.daterangepicker td.off.start-date, 
+.daterangepicker td.off.end-date {
+    background-color: transparent;
+    color: var(--color-dark);
+    opacity: 0.4;
+}
+
+.daterangepicker td.available {
+    color: var(--color-dark);
+}
+
+.daterangepicker td.in-range {
+    background-color: var(--color-light);
+    color: var(--color-dark);
+}
+
+.daterangepicker td.active, 
+.daterangepicker td.active:hover {
+    background-color: var(--color-primary) !important;
+    color: #fff !important;
+}
+
+.daterangepicker .calendar-table .next,
+.daterangepicker .calendar-table .prev,
+.daterangepicker .calendar-table .next.available,
+.daterangepicker .calendar-table .prev.available {
+    color: var(--color-dark);
+}
+
+.daterangepicker select.hourselect,
+.daterangepicker select.minuteselect,
+.daterangepicker select.secondselect,
+.daterangepicker select.ampmselect {
+    background: var(--color-white);
+    color: var(--color-dark);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* DateRangePicker Dropdowns */
+.daterangepicker .calendar-table select {
+    background: var(--color-white);
+    color: var(--color-dark);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-1);
+    padding: 2px 5px;
+    height: auto;
+    font-size: 0.9rem;
+    cursor: pointer;
+    appearance: auto;
+}
+
+.daterangepicker select.monthselect,
+.daterangepicker select.yearselect {
+    background: var(--color-white);
+    color: var(--color-dark);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-1);
+    padding: 4px 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    appearance: auto;
+}
+
+.daterangepicker select.monthselect:hover,
+.daterangepicker select.yearselect:hover {
+    background: var(--color-light);
+}
+
+.daterangepicker th.month {
+    padding: 4px 0;
+}
+
+/* Date Range Picker Improvements */
+.daterangepicker {
+    display: flex;
+    flex-direction: column;
+}
+
+.daterangepicker .drp-calendar {
+    max-width: none;
+    width: 300px; /* Set fixed width for consistency */
+}
+
+.daterangepicker .drp-calendar.left,
+.daterangepicker .drp-calendar.right {
+    margin: 8px;
+}
+
+.daterangepicker .calendar-table {
+    padding: 0;
+}
+
+.daterangepicker td.start-date,
+.daterangepicker td.end-date,
+.daterangepicker td.active {
+    background-color: var(--color-primary) !important;
+    color: #fff !important;
+}
+
+.daterangepicker .calendar-time {
+    margin: 8px auto;
+}
+
+.daterangepicker .drp-buttons {
+    padding: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* DateRangePicker Dropdowns - Update */
+.daterangepicker .calendar-table select,
+.daterangepicker select.monthselect,
+.daterangepicker select.yearselect {
+    background: var(--color-white);
+    color: var(--color-dark);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-1);
+    padding: 4px 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    appearance: auto;
+    z-index: 2;
+    position: relative;
+}
+
+/* Add new styles for month header */
+.daterangepicker .month {
+    position: relative;
+    z-index: 1;
+    pointer-events: all;
+}
+
+.daterangepicker .calendar-table {
+    position: relative;
+    z-index: 1;
+    pointer-events: all;
+}
+
+.daterangepicker tbody {
+    position: relative;
+    z-index: 1;
+    pointer-events: all;
+}
+
+/* DateRangePicker Dropdowns - Update */
+.daterangepicker select.monthselect,
+.daterangepicker select.yearselect {
+    appearance: auto !important;
+    -webkit-appearance: auto !important;
+    -moz-appearance: auto !important;
+    background: var(--color-white) !important;
+    color: var(--color-dark) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: var(--border-radius-1);
+    padding: 4px 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    position: relative;
+    z-index: 100;
+}
+
+/* Perbaiki interaksi kalender */
+.daterangepicker .drp-calendar {
+    position: relative;
+    z-index: 1;
+}
+
+.daterangepicker .calendar-table thead tr:first-child {
+    position: relative;
+    z-index: 100;
+}
+
+.daterangepicker .calendar-table thead th {
+    position: relative;
+    z-index: 90;
+}
+
+.daterangepicker .calendar-table tbody {
+    position: relative;
+    z-index: 80;
+}
+
+@media (min-width: 564px) {
+    .daterangepicker {
+        flex-direction: row;
+        width: auto;
+    }
+    
+    .daterangepicker .drp-calendar.left {
+        margin-right: 8px;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .daterangepicker .drp-calendar.right {
+        margin-left: 8px;
+    }
+}
+
 /* Media Queries */
 @media screen and (max-width: 1200px) {
     .container {

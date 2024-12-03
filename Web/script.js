@@ -189,10 +189,12 @@ function hideLoading() {
     }
 }
 
-// Modify updateDashboard with better error handling
-async function updateDashboard() {
+// Modify updateDashboard with a new parameter
+async function updateDashboard(showLoadingScreen = true) {
     try {
-        showLoading();
+        if (showLoadingScreen) {
+            showLoading();
+        }
         const [dailyData, monthlyData, recentData] = await Promise.all([
             fetchData("harian"),
             fetchData("bulanan"),
@@ -205,7 +207,9 @@ async function updateDashboard() {
     } catch (error) {
         console.error("Failed to update dashboard:", error);
     } finally {
-        hideLoading();
+        if (showLoadingScreen) {
+            hideLoading();
+        }
     }
 }
 
@@ -241,37 +245,97 @@ async function updateRangeData(start, end) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  dailyPlot = createPlot('dailyChart');
-  monthlyPlot = createPlot('monthlyChart');
-  rangePlot = createPlot('rangeChart');
+    dailyPlot = createPlot('dailyChart');
+    monthlyPlot = createPlot('monthlyChart');
+    rangePlot = createPlot('rangeChart');
 
-  $("#dateRange").daterangepicker(
-    {
-      startDate: moment().subtract(7, "days"),
-      endDate: moment(),
-      locale: {
-        format: "YYYY-MM-DD",
-      },
-    },
-    function (start, end) {
-      updateRangeData(start.format("YYYY-MM-DD"), end.format("YYYY-MM-DD"));
-    }
-  );
+    $("#dateRange").daterangepicker({
+        autoUpdateInput: false, // Tambahkan ini agar tidak muncul otomatis
+        startDate: moment(), // Ubah ini
+        endDate: moment(),   // Ubah ini
+        opens: 'left',
+        ranges: {
+            'Hari Ini': [moment(), moment()],
+            'Kemarin': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+            '7 Hari Terakhir': [moment().subtract(6, 'days'), moment()],
+            '30 Hari Terakhir': [moment().subtract(29, 'days'), moment()],
+            'Bulan Ini': [moment().startOf('month'), moment().endOf('month')],
+            'Bulan Lalu': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+        },
+        locale: {
+            format: "DD MMM YYYY",
+            separator: " - ",
+            applyLabel: "Pilih",
+            cancelLabel: "Batal",
+            fromLabel: "Dari",
+            toLabel: "Sampai",
+            customRangeLabel: "Pilih Tanggal",
+            weekLabel: "M",
+            daysOfWeek: ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"],
+            monthNames: ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"],
+            firstDay: 1
+        },
+        autoApply: false,
+        showDropdowns: true,
+        minYear: 2020,
+        maxYear: parseInt(moment().format('YYYY'),10) + 1,
+        linkedCalendars: false, // Tambahkan ini
+        maxSpan: false, // Tambahkan ini
+        alwaysShowCalendars: false, // Tambahkan ini
+        drops: 'down', // Menentukan arah dropdown
+        parentEl: $('.date-filter'), // Menentukan parent element
+        cancelClass: 'btn-light', // Optional: styling tombol cancel
+        applyClass: 'btn-primary', // Optional: styling tombol apply
+        
+        // Memastikan picker tidak muncul otomatis
+        isInvalidDate: function() {
+            return false; // Mencegah picker muncul otomatis
+        },
+        isCustomDate: function() {
+            return false; // Mencegah picker muncul otomatis
+        },
+        singleDatePicker: false,
+        timePicker: false,
+        timePicker24Hour: false,
+        timePickerIncrement: 1,
+        timePickerSeconds: false,
+        buttonClasses: 'btn',
+    });
 
-  // Initial load
-  await updateDashboard();
-  
-  // Set interval for updates
-  setInterval(async () => {
-      if (!isLoading) { // Only update if not already loading
-          await updateDashboard();
-      }
-  }, 30000);
+    // Segera sembunyikan picker setelah inisialisasi
+    $('.daterangepicker').hide();
 
-  // Add event listener for sort select
-  document.getElementById('sortKategori').addEventListener('change', (e) => {
-      updateRecentDataTable(currentData);
-  });
+    // Tambahkan event untuk menampilkan picker hanya saat input diklik
+    $('#dateRange').on('click', function(e) {
+        e.preventDefault();
+        $(this).data('daterangepicker').show();
+    });
+
+    // Tambahkan event listener untuk mengupdate input setelah pemilihan
+    $('#dateRange').on('apply.daterangepicker', function(ev, picker) {
+        $(this).val(picker.startDate.format('DD MMM YYYY') + ' - ' + picker.endDate.format('DD MMM YYYY'));
+        updateRangeData(picker.startDate.format("YYYY-MM-DD"), picker.endDate.format("YYYY-MM-DD"));
+    });
+
+    // Tambahkan event listener untuk mengosongkan input saat dibatalkan
+    $('#dateRange').on('cancel.daterangepicker', function(ev, picker) {
+        $(this).val('');
+    });
+
+    // Initial load with loading screen
+    await updateDashboard(true);
+    
+    // Set interval for updates without loading screen
+    setInterval(async () => {
+        if (!isLoading) { // Only update if not already loading
+            await updateDashboard(false);
+        }
+    }, 30000);
+
+    // Add event listener for sort select
+    document.getElementById('sortKategori').addEventListener('change', (e) => {
+        updateRecentDataTable(currentData);
+    });
 });
 
 // Modify theme toggler code to remove menu button references
@@ -309,4 +373,4 @@ function updateChartsTheme() {
             Plotly.relayout(plot, chartUpdate);
         }
     });
-}
+};
