@@ -60,19 +60,16 @@ function updateChart(chart, data) {
   chart.update();
 }
 
-const MAX_DISTANCE = 30; // Jarak maksimum sensor (cm)
+const MAX_DISTANCE = 30;
 
 function calculateFullness(distance) {
-  // Konversi jarak ke persentase kepenuhan
-  // Semakin dekat jarak (kecil), semakin penuh (besar persentasenya)
   let percentage = ((MAX_DISTANCE - distance) / MAX_DISTANCE) * 100;
-  return Math.max(0, Math.min(100, percentage)); // Pastikan nilai antara 0-100
+  return Math.max(0, Math.min(100, percentage));
 }
 
 function updateFullnessIndicators(data) {
   const latestData = {};
 
-  // Ambil data terbaru untuk setiap kategori
   data.forEach((item) => {
     if (
       !latestData[item.kategori] ||
@@ -82,7 +79,6 @@ function updateFullnessIndicators(data) {
     }
   });
 
-  // Update indikator untuk setiap kategori
   const categories = [
     { id: 1, name: "organik" },
     { id: 2, name: "anorganik" },
@@ -99,7 +95,6 @@ function updateFullnessIndicators(data) {
     progressBar.style.width = `${fullness}%`;
     valueSpan.textContent = `${Math.round(fullness)}%`;
 
-    // Ubah warna berdasarkan tingkat kepenuhan
     if (fullness > 80) {
       progressBar.classList.add("bg-danger");
     } else if (fullness > 50) {
@@ -136,7 +131,6 @@ function updateRecentDataTable(data) {
     tbody.appendChild(tr);
   });
 
-  // Update indikator kepenuhan
   updateFullnessIndicators(data);
 }
 
@@ -168,5 +162,5 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
   updateDashboard();
-  setInterval(updateDashboard, 30000); // Update every 30 seconds
+  setInterval(updateDashboard, 30000);
 });
