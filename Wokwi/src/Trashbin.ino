@@ -25,8 +25,8 @@ bool personDetected = false;
 bool doorOpened = false;
 unsigned long personDetectedTime = 0;
 
-const char* ssid = "YourSSID";
-const char* password = "YourPassword";
+const char* ssid = "HOTSPOT-ITENAS";      
+const char* password = " ";   
 const char* mqttServer = "test.mosquitto.org";
 const int mqttPort = 1883;
 WiFiClient espClient;
@@ -72,9 +72,8 @@ void loop() {
   if (personDistance > 0 && personDistance <= 20 && !personDetected) {
     personDetected = true;
     personDetectedTime = currentMillis;
-    mainDoorServo.write(90);
+    mainDoorServo.write(90); 
     doorOpened = true;
-    client.publish("smartbin/personDetected", "1");
   }
 
   if (doorOpened && currentMillis - personDetectedTime >= 5000) {
@@ -84,7 +83,7 @@ void loop() {
   }
 
   detectAndSortWaste();
-  checkBinFullness();
+  publishBinFullness(); 
 }
 
 long readUltrasonicDistance(int trigPin, int echoPin) {
@@ -97,47 +96,59 @@ long readUltrasonicDistance(int trigPin, int echoPin) {
   return duration * 0.034 / 2;
 }
 
+void publishData(int kategori, int jarak) {
+  char jsonString[50];
+  snprintf(jsonString, sizeof(jsonString), "{\"kategori\": %d, \"jarak\": %d}", kategori, jarak);
+  client.publish("trashbin/data", jsonString);
+}
+
 void detectAndSortWaste() {
   int logamDetected = digitalRead(proxyPin);
   int anorganikDetected = digitalRead(irPin);
   int organikDetected = digitalRead(rainDigitalPin);
 
+  
+  long organikDistance = readUltrasonicDistance(trigOrganikPin, echoOrganikPin);
+  long anorganikDistance = readUltrasonicDistance(trigAnorganikPin, echoAnorganikPin);
+  long bahayaDistance = readUltrasonicDistance(trigBahayaPin, echoBahayaPin);
+
   if (logamDetected == LOW) {
-    client.publish("smartbin/wasteDetected", "Logam");
     directionServo.write(130);
     delay(2000);
     myservo.write(150);
     delay(2000);
     myservo.write(40);
+    publishData(3, bahayaDistance); 
   } else if (organikDetected == LOW) {
-    client.publish("smartbin/wasteDetected", "Organik");
     directionServo.write(58);
     delay(2000);
     myservo.write(150);
     delay(2000);
     myservo.write(40);
+    publishData(1, organikDistance); 
   } else if (anorganikDetected == LOW) {
-    client.publish("smartbin/wasteDetected", "Anorganik");
     directionServo.write(0);
     delay(2000);
     myservo.write(150);
     delay(2000);
     myservo.write(40);
+    publishData(2, anorganikDistance); 
   }
 }
 
-void checkBinFullness() {
+void publishBinFullness() {
+  
   long organikDistance = readUltrasonicDistance(trigOrganikPin, echoOrganikPin);
   long anorganikDistance = readUltrasonicDistance(trigAnorganikPin, echoAnorganikPin);
   long bahayaDistance = readUltrasonicDistance(trigBahayaPin, echoBahayaPin);
 
-  if (organikDistance > 0 && organikDistance <= 10) {
-    client.publish("smartbin/organikFull", "1");
+  if (organikDistance <= 10) {
+    publishData(1, organikDistance);
   }
-  if (anorganikDistance > 0 && anorganikDistance <= 10) {
-    client.publish("smartbin/anorganikFull", "1");
+  if (anorganikDistance <= 10) {
+    publishData(2, anorganikDistance);
   }
-  if (bahayaDistance > 0 && bahayaDistance <= 10) {
-    client.publish("smartbin/logamFull", "1");
+  if (bahayaDistance <= 10) {
+    publishData(3, bahayaDistance);
   }
 }
