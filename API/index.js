@@ -1,10 +1,10 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const mqtt = require('mqtt');
-const cors = require('cors');  // Add this line
+const cors = require('cors'); 
 const app = express();
 
-app.use(cors());  // Add this line before other middleware
+app.use(cors()); 
 app.use(express.json());
 
 mongoose.connect('mongodb+srv://root:Agista0605.@trashbin.ydrv7.mongodb.net/TrashBin')

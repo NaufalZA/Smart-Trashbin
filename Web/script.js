@@ -3,9 +3,8 @@ const API_URL = "https://smart-trashbin-api.onrender.com/api";
 const categoryLabels = ["Organik", "Anorganik", "B3"];
 const chartColors = ["#4CAF50", "#2196F3", "#F44336"];
 
-// Hapus variabel chart sebelumnya
 let dailyPlot, monthlyPlot, rangePlot;
-let currentData = []; // Add this at the top with other global variables
+let currentData = []; 
 
 function createPlot(divId) {
     const trace = {
