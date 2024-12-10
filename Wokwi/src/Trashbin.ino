@@ -29,8 +29,22 @@ const char* ssid = "HOTSPOT-ITENAS";
 const char* password = " ";   
 const char* mqttServer = "test.mosquitto.org";
 const int mqttPort = 1883;
+const char* TOPIC_DOOR_CONTROL = "trashbin/pintu";
+const char* TOPIC_BIN_DATA = "trashbin/data";
 WiFiClient espClient;
 PubSubClient client(espClient);
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  if (String(topic) == TOPIC_DOOR_CONTROL) {
+    if ((char)payload[0] == '1') {
+      mainDoorServo.write(90);
+      doorOpened = true;
+    } else if ((char)payload[0] == '0') {
+      mainDoorServo.write(0);
+      doorOpened = false;
+    }
+  }
+}
 
 void setup() {
   pinMode(proxyPin, INPUT);
@@ -56,9 +70,12 @@ void setup() {
     Serial.print(".");
   }
   client.setServer(mqttServer, mqttPort);
+  client.setCallback(callback);
+  
   while (!client.connected()) {
     if (client.connect("SmartBinClient")) {
       Serial.println("Connected to MQTT Broker");
+      client.subscribe(TOPIC_DOOR_CONTROL);
     } else {
       delay(1000);
     }
@@ -66,6 +83,8 @@ void setup() {
 }
 
 void loop() {
+  client.loop();  // Add this at the beginning of loop()
+  
   unsigned long currentMillis = millis();
   long personDistance = readUltrasonicDistance(trigPersonPin, echoPersonPin);
 
@@ -99,7 +118,7 @@ long readUltrasonicDistance(int trigPin, int echoPin) {
 void publishData(int kategori, int jarak) {
   char jsonString[50];
   snprintf(jsonString, sizeof(jsonString), "{\"kategori\": %d, \"jarak\": %d}", kategori, jarak);
-  client.publish("trashbin/data", jsonString);
+  client.publish(TOPIC_BIN_DATA, jsonString);
 }
 
 void detectAndSortWaste() {
