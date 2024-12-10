@@ -1,7 +1,6 @@
 #include <ESP32Servo.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
-#include <esp_task_wdt.h>
 
 Servo myservo;
 Servo directionServo;
@@ -26,48 +25,28 @@ bool personDetected = false;
 bool doorOpened = false;
 unsigned long personDetectedTime = 0;
 
-const char *ssid = "Wokwi-GUEST";
-const char *password = " ";
-const char *mqttServer = "test.mosquitto.org";
+const char* ssid = "Wokwi-GUEST";      
+const char* password = " ";   
+const char* mqttServer = "test.mosquitto.org";
 const int mqttPort = 1883;
-const char *TOPIC_DOOR_CONTROL = "trashbin/pintu";
-const char *TOPIC_BIN_DATA = "trashbin/data";
+const char* TOPIC_DOOR_CONTROL = "trashbin/pintu";
+const char* TOPIC_BIN_DATA = "trashbin/data";
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-RTC_DATA_ATTR int bootCount = 0;
-const int WDT_TIMEOUT = 30; // watchdog timeout in seconds
-
-void callback(char *topic, byte *payload, unsigned int length)
-{
-  if (String(topic) == TOPIC_DOOR_CONTROL)
-  {
-    if ((char)payload[0] == '1')
-    {
+void callback(char* topic, byte* payload, unsigned int length) {
+  if (String(topic) == TOPIC_DOOR_CONTROL) {
+    if ((char)payload[0] == '1') {
       mainDoorServo.write(90);
       doorOpened = true;
-    }
-    else if ((char)payload[0] == '0')
-    {
+    } else if ((char)payload[0] == '0') {
       mainDoorServo.write(0);
       doorOpened = false;
     }
   }
 }
 
-void setup()
-{
-  Serial.begin(115200);
-  esp_task_wdt_init(WDT_TIMEOUT, true); // enable panic so ESP32 restarts
-  esp_task_wdt_add(NULL);               // add current thread to WDT watch
-
-  bootCount++;
-  Serial.println("Boot number: " + String(bootCount));
-
-  // Add delay for system stabilization
-  delay(1000);
-
-  // Initialize pins
+void setup() {
   pinMode(proxyPin, INPUT);
   pinMode(irPin, INPUT);
   pinMode(rainDigitalPin, INPUT);
@@ -80,148 +59,53 @@ void setup()
   pinMode(trigBahayaPin, OUTPUT);
   pinMode(echoBahayaPin, INPUT);
 
-  // Initialize servos with error checking
-  if (!myservo.attach(servoPin))
-  {
-    Serial.println("Failed to attach main servo");
-    ESP.restart();
-  }
-  if (!directionServo.attach(directionServoPin))
-  {
-    Serial.println("Failed to attach direction servo");
-    ESP.restart();
-  }
-  if (!mainDoorServo.attach(mainDoorServoPin))
-  {
-    Serial.println("Failed to attach main door servo");
-    ESP.restart();
-  }
+  myservo.attach(servoPin);
+  directionServo.attach(directionServoPin);
+  mainDoorServo.attach(mainDoorServoPin);
 
-  // Set initial positions with delays
-  myservo.write(40);
-  delay(500);
-  directionServo.write(90);
-  delay(500);
-  mainDoorServo.write(0);
-  delay(500);
-
-  WiFi.mode(WIFI_STA);   // Set WiFi to station mode
-  WiFi.disconnect(true); // Disconnect from any previous WiFi
-  delay(1000);
-
-  // Connect to WiFi
-  Serial.println("Connecting to WiFi");
+  Serial.begin(115200);
   WiFi.begin(ssid, password);
-
-  int wifiAttempts = 0;
-  while (WiFi.status() != WL_CONNECTED && wifiAttempts < 20)
-  {
+  while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
-    wifiAttempts++;
   }
-
-  if (WiFi.status() != WL_CONNECTED)
-  {
-    Serial.println("\nWiFi connection failed! Restarting...");
-    ESP.restart();
-  }
-
-  Serial.println("\nWiFi connected");
-
-  // Connect to MQTT
   client.setServer(mqttServer, mqttPort);
   client.setCallback(callback);
-  connectMQTT();
-}
-
-void connectMQTT()
-{
-  int mqttAttempts = 0;
-  while (!client.connected() && mqttAttempts < 3)
-  {
-    Serial.println("Attempting MQTT connection...");
-    if (client.connect("SmartBinClient"))
-    {
+  
+  while (!client.connected()) {
+    if (client.connect("SmartBinClient")) {
       Serial.println("Connected to MQTT Broker");
       client.subscribe(TOPIC_DOOR_CONTROL);
-    }
-    else
-    {
-      Serial.print("failed, rc=");
-      Serial.println(client.state());
+    } else {
       delay(1000);
-      mqttAttempts++;
     }
   }
 }
 
-void loop()
-{
-  esp_task_wdt_reset(); // Reset watchdog timer
-
-  static unsigned long lastWifiCheck = 0;
-  static unsigned long lastMqttCheck = 0;
-
-  // Check connections periodically
-  unsigned long currentMillis = millis();
-
-  if (currentMillis - lastWifiCheck >= 30000)
-  { // Check WiFi every 30 seconds
-    lastWifiCheck = currentMillis;
-    if (WiFi.status() != WL_CONNECTED)
-    {
-      Serial.println("WiFi reconnecting...");
-      WiFi.disconnect();
-      WiFi.begin(ssid, password);
-      delay(1000);
-    }
-  }
-
-  if (currentMillis - lastMqttCheck >= 5000)
-  { // Check MQTT every 5 seconds
-    lastMqttCheck = currentMillis;
-    if (!client.connected())
-    {
-      connectMQTT();
-    }
-  }
-
-  client.loop();
-
-  // Check WiFi connection
-  if (WiFi.status() != WL_CONNECTED)
-  {
-    Serial.println("WiFi disconnected. Reconnecting...");
-    WiFi.begin(ssid, password);
-    delay(5000);
-    return;
-  }
-
+void loop() {
+  client.loop();  // Add this at the beginning of loop()
+  
   unsigned long currentMillis = millis();
   long personDistance = readUltrasonicDistance(trigPersonPin, echoPersonPin);
 
-  if (personDistance > 0 && personDistance <= 20 && !personDetected)
-  {
+  if (personDistance > 0 && personDistance <= 20 && !personDetected) {
     personDetected = true;
     personDetectedTime = currentMillis;
-    mainDoorServo.write(90);
+    mainDoorServo.write(90); 
     doorOpened = true;
   }
 
-  if (doorOpened && currentMillis - personDetectedTime >= 5000)
-  {
+  if (doorOpened && currentMillis - personDetectedTime >= 5000) {
     mainDoorServo.write(0);
     doorOpened = false;
     personDetected = false;
   }
 
   detectAndSortWaste();
-  publishBinFullness();
+  publishBinFullness(); 
 }
 
-long readUltrasonicDistance(int trigPin, int echoPin)
-{
+long readUltrasonicDistance(int trigPin, int echoPin) {
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
   digitalWrite(trigPin, HIGH);
@@ -231,17 +115,59 @@ long readUltrasonicDistance(int trigPin, int echoPin)
   return duration * 0.034 / 2;
 }
 
-void publishData(int kategori, int jarak)
-{
+void publishData(int kategori, int jarak) {
   char jsonString[50];
   snprintf(jsonString, sizeof(jsonString), "{\"kategori\": %d, \"jarak\": %d}", kategori, jarak);
   client.publish(TOPIC_BIN_DATA, jsonString);
 }
 
-void detectAndSortWaste()
-{
+void detectAndSortWaste() {
   int logamDetected = digitalRead(proxyPin);
   int anorganikDetected = digitalRead(irPin);
   int organikDetected = digitalRead(rainDigitalPin);
 
+  
   long organikDistance = readUltrasonicDistance(trigOrganikPin, echoOrganikPin);
+  long anorganikDistance = readUltrasonicDistance(trigAnorganikPin, echoAnorganikPin);
+  long bahayaDistance = readUltrasonicDistance(trigBahayaPin, echoBahayaPin);
+
+  if (logamDetected == LOW) {
+    directionServo.write(130);
+    delay(2000);
+    myservo.write(150);
+    delay(2000);
+    myservo.write(40);
+    publishData(3, bahayaDistance); 
+  } else if (organikDetected == LOW) {
+    directionServo.write(58);
+    delay(2000);
+    myservo.write(150);
+    delay(2000);
+    myservo.write(40);
+    publishData(1, organikDistance); 
+  } else if (anorganikDetected == LOW) {
+    directionServo.write(0);
+    delay(2000);
+    myservo.write(150);
+    delay(2000);
+    myservo.write(40);
+    publishData(2, anorganikDistance); 
+  }
+}
+
+void publishBinFullness() {
+  
+  long organikDistance = readUltrasonicDistance(trigOrganikPin, echoOrganikPin);
+  long anorganikDistance = readUltrasonicDistance(trigAnorganikPin, echoAnorganikPin);
+  long bahayaDistance = readUltrasonicDistance(trigBahayaPin, echoBahayaPin);
+
+  if (organikDistance <= 10) {
+    publishData(1, organikDistance);
+  }
+  if (anorganikDistance <= 10) {
+    publishData(2, anorganikDistance);
+  }
+  if (bahayaDistance <= 10) {
+    publishData(3, bahayaDistance);
+  }
+}
