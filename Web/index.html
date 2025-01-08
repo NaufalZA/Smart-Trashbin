@@ -9,7 +9,6 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.plot.ly/plotly-2.16.1.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
     <style>
         .loading-overlay {
             position: fixed;
@@ -110,8 +109,6 @@
                 </div>
             </div>
 
-            <!-- Remove door controls from here -->
-
             <div class="histories">
                 <h2>Historical Data</h2>
                 <div class="history-charts">
@@ -157,15 +154,6 @@
                 <h2>Date Filter</h2>
                 <input type="text" id="dateRange" class="form-control">
                 <div id="rangeChart"></div>
-            </div>
-
-            <!-- Add door controls here -->
-            <div class="door-controls mt-4">
-                <h2>Door Controls</h2>
-                <div class="d-flex gap-2">
-                    <button id="openDoor" class="btn btn-success">Buka Pintu</button>
-                    <button id="closeDoor" class="btn btn-danger">Tutup Pintu</button>
-                </div>
             </div>
         </div>
     </div>
