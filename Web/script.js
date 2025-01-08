@@ -3,6 +3,12 @@ const API_URL = "https://smart-trashbin-api.onrender.com/api";
 const categoryLabels = ["Organik", "Anorganik", "B3"];
 const chartColors = ["#4CAF50", "#2196F3", "#F44336"];
 
+const mqttClient = mqtt.connect('mqtt://test.mosquitto.org:1833');
+
+mqttClient.on('connect', () => {
+    console.log('Connected to MQTT broker');
+});
+
 let dailyPlot, monthlyPlot, rangePlot;
 let currentData = []; 
 
@@ -337,6 +343,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Add event listener for sort select
     document.getElementById('sortKategori').addEventListener('change', (e) => {
         updateRecentDataTable(currentData);
+    });
+
+    // Add door control event listeners
+    document.getElementById('openDoor').addEventListener('click', () => {
+        mqttClient.publish('trashbin/pintu', '1');
+    });
+
+    document.getElementById('closeDoor').addEventListener('click', () => {
+        mqttClient.publish('trashbin/pintu', '0');
     });
 });
 

@@ -1,57 +1,40 @@
 #include <ESP32Servo.h>
-#include <WiFi.h>
-#include <PubSubClient.h>
 
-Servo myservo;
-Servo directionServo;
-Servo mainDoorServo;
+Servo myservo;                
+Servo directionServo;     
+Servo mainDoorServo;          
 
-const int proxyPin = 35;
-const int irPin = 32;
-const int rainDigitalPin = 25;
-const int servoPin = 16;
-const int directionServoPin = 17;
-const int mainDoorServoPin = 18;
-const int trigPersonPin = 5;
-const int echoPersonPin = 4;
-const int trigOrganikPin = 12;
-const int echoOrganikPin = 13;
-const int trigAnorganikPin = 14;
-const int echoAnorganikPin = 15;
-const int trigBahayaPin = 19;
-const int echoBahayaPin = 21;
+const int proxyPin = 35;          
+const int irPin = 32;             
+const int rainDigitalPin = 25;    
+const int servoPin = 16;          
+const int directionServoPin = 17; 
+const int mainDoorServoPin = 18;  
 
-bool personDetected = false;
-bool doorOpened = false;
+const int trigPersonPin = 5;      
+const int echoPersonPin = 4;      
+
+
+const int trigOrganikPin = 12;   // Trig untuk sampah organik
+const int echoOrganikPin = 13;   // Echo untuk sampah organik
+const int trigAnorganikPin = 14; // Trig untuk sampah anorganik
+const int echoAnorganikPin = 15; // Echo untuk sampah anorganik
+const int trigBahayaPin = 19;    // Trig untuk sampah berbahaya
+const int echoBahayaPin = 21;    // Echo untuk sampah berbahaya
+
+bool personDetected = false;      // Status deteksi orang
+bool doorOpened = false;          // Status pintu utama
+bool wasteProcessed = false;      // Status pemrosesan sampah
 unsigned long personDetectedTime = 0;
-
-const char* ssid = "HOTSPOT-ITENAS";      
-const char* password = " ";   
-const char* mqttServer = "test.mosquitto.org";
-const int mqttPort = 1883;
-const char* TOPIC_DOOR_CONTROL = "trashbin/pintu";
-const char* TOPIC_BIN_DATA = "trashbin/data";
-WiFiClient espClient;
-PubSubClient client(espClient);
-
-void callback(char* topic, byte* payload, unsigned int length) {
-  if (String(topic) == TOPIC_DOOR_CONTROL) {
-    if ((char)payload[0] == '1') {
-      mainDoorServo.write(90);
-      doorOpened = true;
-    } else if ((char)payload[0] == '0') {
-      mainDoorServo.write(0);
-      doorOpened = false;
-    }
-  }
-}
 
 void setup() {
   pinMode(proxyPin, INPUT);
   pinMode(irPin, INPUT);
   pinMode(rainDigitalPin, INPUT);
+
   pinMode(trigPersonPin, OUTPUT);
   pinMode(echoPersonPin, INPUT);
+
   pinMode(trigOrganikPin, OUTPUT);
   pinMode(echoOrganikPin, INPUT);
   pinMode(trigAnorganikPin, OUTPUT);
@@ -64,110 +47,96 @@ void setup() {
   mainDoorServo.attach(mainDoorServoPin);
 
   Serial.begin(115200);
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  client.setServer(mqttServer, mqttPort);
-  client.setCallback(callback);
-  
-  while (!client.connected()) {
-    if (client.connect("SmartBinClient")) {
-      Serial.println("Connected to MQTT Broker");
-      client.subscribe(TOPIC_DOOR_CONTROL);
-    } else {
-      delay(1000);
-    }
-  }
+  Serial.println("Sistem tong sampah pintar siap!");
 }
 
 void loop() {
-  client.loop();  // Add this at the beginning of loop()
-  
   unsigned long currentMillis = millis();
-  long personDistance = readUltrasonicDistance(trigPersonPin, echoPersonPin);
+  
 
+  // Deteksi orang
+  long personDistance = readUltrasonicDistance(trigPersonPin, echoPersonPin);
   if (personDistance > 0 && personDistance <= 20 && !personDetected) {
     personDetected = true;
     personDetectedTime = currentMillis;
-    mainDoorServo.write(90); 
+    Serial.println("Orang terdeteksi, membuka pintu utama.");
+    mainDoorServo.write(90);  // Membuka pintu utama
     doorOpened = true;
   }
 
+  // Tutup pintu utama setelah 5 detik
   if (doorOpened && currentMillis - personDetectedTime >= 5000) {
-    mainDoorServo.write(0);
+    mainDoorServo.write(0);  // Menutup pintu utama
     doorOpened = false;
-    personDetected = false;
+    personDetected = false; // Reset status deteksi orang
   }
 
+  // Proses deteksi sampah berjalan terus-menerus
   detectAndSortWaste();
-  publishBinFullness(); 
+
+  // Cek apakah tong sampah penuh
+  checkBinFullness();
 }
 
+// Fungsi membaca jarak dari sensor ultrasonik
 long readUltrasonicDistance(int trigPin, int echoPin) {
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
+
   long duration = pulseIn(echoPin, HIGH);
-  return duration * 0.034 / 2;
+  return duration * 0.034 / 2; // Konversi durasi ke jarak dalam cm
 }
 
-void publishData(int kategori, int jarak) {
-  char jsonString[50];
-  snprintf(jsonString, sizeof(jsonString), "{\"kategori\": %d, \"jarak\": %d}", kategori, jarak);
-  client.publish(TOPIC_BIN_DATA, jsonString);
-}
-
+// Fungsi mendeteksi dan menyortir sampah
 void detectAndSortWaste() {
   int logamDetected = digitalRead(proxyPin);
   int anorganikDetected = digitalRead(irPin);
   int organikDetected = digitalRead(rainDigitalPin);
 
-  
-  long organikDistance = readUltrasonicDistance(trigOrganikPin, echoOrganikPin);
-  long anorganikDistance = readUltrasonicDistance(trigAnorganikPin, echoAnorganikPin);
-  long bahayaDistance = readUltrasonicDistance(trigBahayaPin, echoBahayaPin);
-
   if (logamDetected == LOW) {
-    directionServo.write(130);
+    Serial.println("Sampah logam terdeteksi");
+    directionServo.write(130); // Posisi logam
     delay(2000);
     myservo.write(150);
     delay(2000);
     myservo.write(40);
-    publishData(3, bahayaDistance); 
-  } else if (organikDetected == LOW) {
-    directionServo.write(58);
+  } 
+  else if (organikDetected == LOW) {
+    Serial.println("Sampah organik terdeteksi");
+    directionServo.write(58); // Posisi organik
     delay(2000);
     myservo.write(150);
     delay(2000);
     myservo.write(40);
-    publishData(1, organikDistance); 
-  } else if (anorganikDetected == LOW) {
-    directionServo.write(0);
+  } 
+  else if (anorganikDetected == LOW) {
+    Serial.println("Sampah anorganik terdeteksi");
+    directionServo.write(0); // Posisi anorganik
     delay(2000);
     myservo.write(150);
     delay(2000);
     myservo.write(40);
-    publishData(2, anorganikDistance); 
   }
 }
 
-void publishBinFullness() {
-  
+// Fungsi untuk memeriksa apakah tong sampah penuh
+void checkBinFullness() {
   long organikDistance = readUltrasonicDistance(trigOrganikPin, echoOrganikPin);
   long anorganikDistance = readUltrasonicDistance(trigAnorganikPin, echoAnorganikPin);
   long bahayaDistance = readUltrasonicDistance(trigBahayaPin, echoBahayaPin);
 
-  if (organikDistance <= 10) {
-    publishData(1, organikDistance);
+  if (organikDistance > 0 && organikDistance <= 10) {
+    Serial.println("Tong sampah organik penuh!");
   }
-  if (anorganikDistance <= 10) {
-    publishData(2, anorganikDistance);
+
+  if (anorganikDistance > 0 && anorganikDistance <= 10) {
+    Serial.println("Tong sampah anorganik penuh!");
   }
-  if (bahayaDistance <= 10) {
-    publishData(3, bahayaDistance);
+
+  if (bahayaDistance > 0 && bahayaDistance <= 10) {
+    Serial.println("Tong sampah berbahaya penuh!");
   }
 }
