@@ -243,6 +243,72 @@ async function updateRangeData(start, end) {
   updatePlot(rangePlot, data);
 }
 
+// MQTT Configuration
+const MQTT_HOST = "test.mosquitto.org";
+const MQTT_PORT = 8081;  // Using WebSocket SSL port
+const MQTT_TOPIC = "trashbin/pintu";
+let mqttClient;
+
+function initMQTT() {
+    const clientId = "webClient_" + Math.random().toString(16).substr(2, 8);
+    console.log("Initializing MQTT with client ID:", clientId);
+    
+    mqttClient = new Paho.MQTT.Client(MQTT_HOST, MQTT_PORT, clientId);
+
+    mqttClient.onConnectionLost = onConnectionLost;
+    mqttClient.onMessageArrived = onMessageArrived;
+
+    const options = {
+        onSuccess: onConnect,
+        onFailure: onFailure,
+        useSSL: true,
+        timeout: 3,
+        keepAliveInterval: 60
+    };
+
+    console.log("Attempting to connect to MQTT broker...");
+    mqttClient.connect(options);
+}
+
+function onConnect() {
+    console.log("MQTT Connected successfully");
+    mqttClient.subscribe(MQTT_TOPIC, {qos: 0});
+    console.log("Subscribed to topic:", MQTT_TOPIC);
+}
+
+function onFailure(error) {
+    console.error("MQTT Connection failed:", error);
+    // Try to reconnect after 5 seconds
+    setTimeout(initMQTT, 5000);
+}
+
+function onConnectionLost(responseObject) {
+    if (responseObject.errorCode !== 0) {
+        console.log("MQTT Connection lost:", responseObject.errorMessage);
+        setTimeout(initMQTT, 5000);
+    }
+}
+
+function onMessageArrived(message) {
+    const payload = message.payloadString;
+    console.log("Message received on topic:", message.destinationName);
+    console.log("Message content:", payload);
+    
+    // You can add specific handling for received messages here
+    // For example, updating UI elements based on the received state
+}
+
+function publishMessage(message) {
+    if (!mqttClient || !mqttClient.isConnected()) {
+        console.error("MQTT client not connected");
+        return;
+    }
+
+    const mqtt_message = new Paho.MQTT.Message(message);
+    mqtt_message.destinationName = MQTT_TOPIC;
+    mqttClient.send(mqtt_message);
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     dailyPlot = createPlot('dailyChart');
     monthlyPlot = createPlot('monthlyChart');
@@ -338,6 +404,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById('sortKategori').addEventListener('change', (e) => {
         updateRecentDataTable(currentData);
     });
+
+    // Add MQTT control listeners
+    document.getElementById('openTrash').addEventListener('click', () => {
+        publishMessage("1");
+    });
+
+    document.getElementById('closeTrash').addEventListener('click', () => {
+        publishMessage("0");
+    });
+
+    // Initialize MQTT connection
+    initMQTT();
 });
 
 // Modify theme toggler code to remove menu button references
