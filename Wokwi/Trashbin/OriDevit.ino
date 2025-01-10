@@ -1,6 +1,4 @@
 #include <ESP32Servo.h>
-#include <WiFi.h>
-#include <PubSubClient.h>
 
 Servo myservo;
 Servo directionServo;
@@ -22,14 +20,6 @@ const int trigAnorganikPin = 14;
 const int echoAnorganikPin = 15;
 const int trigBahayaPin = 19;
 const int echoBahayaPin = 21;
-
-const char* ssid = "King";
-const char* password = "devit123";
-const char* mqtt_server = "test.mosquitto.org";
-const int mqtt_port = 1883;
-
-WiFiClient espClient;
-PubSubClient client(espClient);
 
 bool personDetected = false;
 bool doorOpened = false;
@@ -57,17 +47,6 @@ void setup() {
 
   Serial.begin(115200);
   Serial.println("Sistem tong sampah pintar siap!");
-
-  // Connect to WiFi
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("\nWiFi connected");
-
-  // Setup MQTT
-  client.setServer(mqtt_server, mqtt_port);
 }
 
 void loop() {
@@ -139,26 +118,6 @@ void checkBinFullness() {
   long anorganikDistance = readUltrasonicDistance(trigAnorganikPin, echoAnorganikPin);
   long bahayaDistance = readUltrasonicDistance(trigBahayaPin, echoBahayaPin);
 
-  // Ensure MQTT connection
-  if (!client.connected()) {
-    reconnect();
-  }
-  client.loop();
-
-  // Create and publish data
-  char payload[50];
-  
-  sprintf(payload, "{\"kategori\":1,\"jarak\":%ld}", organikDistance);
-  client.publish("trashbin/data", payload);
-  delay(100);
-  
-  sprintf(payload, "{\"kategori\":2,\"jarak\":%ld}", anorganikDistance);
-  client.publish("trashbin/data", payload);
-  delay(100);
-  
-  sprintf(payload, "{\"kategori\":3,\"jarak\":%ld}", bahayaDistance);
-  client.publish("trashbin/data", payload);
-
   if (organikDistance > 0 && organikDistance <= 5) {
     Serial.println("Tong sampah organik penuh!");
   } else if (organikDistance > 5 && organikDistance <= 10) {
@@ -175,19 +134,5 @@ void checkBinFullness() {
     Serial.println("Tong sampah berbahaya penuh!");
   } else if (bahayaDistance > 5 && bahayaDistance <= 10) {
     Serial.println("Tong sampah berbahaya hampir penuh!");
-  }
-}
-
-void reconnect() {
-  while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
-    if (client.connect("ESP32Client")) {
-      Serial.println("connected");
-    } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" retrying in 5 seconds");
-      delay(5000);
-    }
   }
 }

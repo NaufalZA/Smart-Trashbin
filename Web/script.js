@@ -245,6 +245,7 @@ async function updateRangeData(start, end) {
 
 // MQTT Configuration
 const MQTT_HOST = "test.mosquitto.org";
+// const MQTT_HOST = "broker.hivemq.com";
 const MQTT_PORT = 8081;  // Using WebSocket SSL port
 const MQTT_TOPIC = "trashbin/pintu";
 let mqttClient;
