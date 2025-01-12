@@ -8,6 +8,7 @@ const char* password = "";
 const char* mqtt_server = "test.mosquitto.org";
 const int mqtt_port = 1883;
 const char* mqtt_topic = "trashbin/data";
+const char* mqtt_control_topic = "trashbin/pintu"; 
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -53,6 +54,22 @@ void setup_wifi() {
   Serial.println(WiFi.localIP());
 }
 
+void callback(char* topic, byte* payload, unsigned int length) {
+  char message[length + 1];
+  memcpy(message, payload, length);
+  message[length] = '\0';
+  
+  if (strcmp(topic, mqtt_control_topic) == 0) {
+    if (strcmp(message, "1") == 0) {
+      mainDoorServo.write(150);
+      doorOpened = true;
+    } else if (strcmp(message, "0") == 0) {
+      mainDoorServo.write(45);
+      doorOpened = false;
+    }
+  }
+}
+
 void reconnect() {
   while (!client.connected()) {
     Serial.println("Attempting MQTT connection...");
@@ -61,6 +78,7 @@ void reconnect() {
     
     if (client.connect(clientId.c_str())) {
       Serial.println("MQTT connected");
+      client.subscribe(mqtt_control_topic); 
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -103,6 +121,7 @@ void setup() {
   Serial.begin(115200);
   setup_wifi();
   client.setServer(mqtt_server, mqtt_port);
+  client.setCallback(callback); 
 }
 
 void loop() {
@@ -128,7 +147,6 @@ void loop() {
   }
 
   detectAndSortWaste();
-  // checkBinFullness();
 }
 
 long readUltrasonicDistance(int trigPin, int echoPin) {
