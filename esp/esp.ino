@@ -2,13 +2,12 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 
-const char* ssid = "King";
-const char* password = "devit123";
+const char* ssid = "Nops";
+const char* password = "";
+
 const char* mqtt_server = "test.mosquitto.org";
 const int mqtt_port = 1883;
-const char* mqtt_topic_status = "trashbin/data";
-const char* mqtt_topic_people = "trashbin/people";
-const char* mqtt_topic_control = "trashbin/control";
+const char* mqtt_topic = "trashbin/data";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -36,51 +35,60 @@ const int echoBahayaPin = 21;
 
 bool personDetected = false;
 bool doorOpened = false;
+bool wasteProcessed = false;
 unsigned long personDetectedTime = 0;
-int peopleCount = 0;
+unsigned long lastMsg = 0;
 
-void setupWiFi() {
+void setup_wifi() {
+  delay(10);
+  Serial.println("\nConnecting to WiFi...");
   WiFi.begin(ssid, password);
+  
   while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
+    delay(500);
+    Serial.print(".");
   }
+  Serial.println("\nWiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
 }
 
 void reconnect() {
   while (!client.connected()) {
-    if (client.connect("ESP32Client")) {
-      client.subscribe(mqtt_topic_control);
+    Serial.println("Attempting MQTT connection...");
+    String clientId = "ESP32Client-";
+    clientId += String(random(0xffff), HEX);
+    
+    if (client.connect(clientId.c_str())) {
+      Serial.println("MQTT connected");
     } else {
-      delay(1000);
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" retrying in 5 seconds");
+      delay(5000);
     }
   }
 }
 
-void callback(char* topic, byte* payload, unsigned int length) {
-  String message;
-  for (int i = 0; i < length; i++) {
-    message += (char)payload[i];
+void sendWasteData(int category, long distance) {
+  if (!client.connected()) {
+    reconnect();
   }
-  if (String(topic) == mqtt_topic_control) {
-    if (message == "open") {
-      mainDoorServo.write(150); // Membuka pintu
-    } else if (message == "close") {
-      mainDoorServo.write(45); // Menutup pintu
-    }
-  }
+  
+  char message[50];
+  snprintf(message, 50, "{\"kategori\": %d, \"jarak\": %ld}", category, distance);
+  client.publish(mqtt_topic, message);
+  Serial.printf("Published: %s\n", message);
 }
 
 void setup() {
-  Serial.begin(115200);
-  setupWiFi();
-  client.setServer(mqtt_server, mqtt_port);
-  client.setCallback(callback);
-
   pinMode(proxyPin, INPUT);
   pinMode(irPin, INPUT);
   pinMode(rainDigitalPin, INPUT);
+
   pinMode(trigPersonPin, OUTPUT);
   pinMode(echoPersonPin, INPUT);
+
   pinMode(trigOrganikPin, OUTPUT);
   pinMode(echoOrganikPin, INPUT);
   pinMode(trigAnorganikPin, OUTPUT);
@@ -91,6 +99,10 @@ void setup() {
   myservo.attach(servoPin);
   directionServo.attach(directionServoPin);
   mainDoorServo.attach(mainDoorServoPin);
+
+  Serial.begin(115200);
+  setup_wifi();
+  client.setServer(mqtt_server, mqtt_port);
 }
 
 void loop() {
@@ -98,28 +110,25 @@ void loop() {
     reconnect();
   }
   client.loop();
-
+  
   unsigned long currentMillis = millis();
+  
   long personDistance = readUltrasonicDistance(trigPersonPin, echoPersonPin);
-
   if (personDistance > 0 && personDistance <= 5 && !personDetected) {
     personDetected = true;
     personDetectedTime = currentMillis;
-    peopleCount++;
     mainDoorServo.write(150);
     doorOpened = true;
-    String peopleMessage = String(peopleCount);
-    client.publish(mqtt_topic_people, peopleMessage.c_str());
   }
 
-  if (doorOpened && currentMillis - personDetectedTime >= 3000) {
+  if (doorOpened && currentMillis - personDetectedTime >= 5000) {
     mainDoorServo.write(45);
     doorOpened = false;
     personDetected = false;
   }
 
   detectAndSortWaste();
-  checkBinFullness();
+  // checkBinFullness();
 }
 
 long readUltrasonicDistance(int trigPin, int echoPin) {
@@ -141,44 +150,25 @@ void detectAndSortWaste() {
   if (logamDetected == LOW) {
     directionServo.write(130);
     delay(2000);
-    myservo.write(140);
+    myservo.write(150);
     delay(2000);
     myservo.write(40);
-  } else if (organikDetected == LOW) {
+    sendWasteData(3, readUltrasonicDistance(trigBahayaPin, echoBahayaPin));
+  } 
+  else if (organikDetected == LOW) {
     directionServo.write(58);
     delay(2000);
-    myservo.write(140);
+    myservo.write(150);
     delay(2000);
     myservo.write(40);
-  } else if (anorganikDetected == LOW) {
+    sendWasteData(1, readUltrasonicDistance(trigOrganikPin, echoOrganikPin));
+  } 
+  else if (anorganikDetected == LOW) {
     directionServo.write(0);
     delay(2000);
-    myservo.write(140);
+    myservo.write(150);
     delay(2000);
     myservo.write(40);
-  }
-}
-
-void checkBinFullness() {
-  long organikDistance = readUltrasonicDistance(trigOrganikPin, echoOrganikPin);
-  long anorganikDistance = readUltrasonicDistance(trigAnorganikPin, echoAnorganikPin);
-  long bahayaDistance = readUltrasonicDistance(trigBahayaPin, echoBahayaPin);
-
-  if (organikDistance > 0 && organikDistance <= 5) {
-    client.publish(mqtt_topic_status, "Tong sampah organik penuh!");
-  } else if (organikDistance > 5 && organikDistance <= 10) {
-    client.publish(mqtt_topic_status, "Tong sampah organik hampir penuh!");
-  }
-
-  if (anorganikDistance > 0 && anorganikDistance <= 5) {
-    client.publish(mqtt_topic_status, "Tong sampah anorganik penuh!");
-  } else if (anorganikDistance > 5 && anorganikDistance <= 10) {
-    client.publish(mqtt_topic_status, "Tong sampah anorganik hampir penuh!");
-  }
-
-  if (bahayaDistance > 0 && bahayaDistance <= 5) {
-    client.publish(mqtt_topic_status, "Tong sampah berbahaya penuh!");
-  } else if (bahayaDistance > 5 && bahayaDistance <= 10) {
-    client.publish(mqtt_topic_status, "Tong sampah berbahaya hampir penuh!");
+    sendWasteData(2, readUltrasonicDistance(trigAnorganikPin, echoAnorganikPin));
   }
 }
